@@ -1,0 +1,127 @@
+﻿@page "/customers"
+@page "/customers/Page/{Page:int}"
+@using ClientProject.Services;
+@using Microsoft.AspNetCore.Components;
+
+@using ServerProject.Models;
+@using ClientProject.Model;
+@using ClientProject.Components.Pages;
+
+@using BlazorBootstrap;
+
+
+ @inject HttpClient httpClient;
+
+<PageTitle>Customers</PageTitle>
+
+<h1>Customers</h1>
+<Button Color="ButtonColor.Success" @onclick="OnShowModalClick"> Add +  </Button>
+
+@if (customers == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Temp. (C)</th>
+                    <th>Temp. (F)</th>
+                    <th>Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in customers)
+                {
+                    <tr>
+                        <td>@customer.CustomerId</td>
+                        <td>@customer.CompanyName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+
+        <Pagination ActivePageNumber="@CurrentPageNumber" TotalPages="@TotalItems" PageChanged="OnPageChangedAsync" />
+
+
+        <Modal @ref="modal" Title="Modal title">
+            <BodyTemplate>
+                Modal body text goes here.
+            </BodyTemplate>
+            <FooterTemplate>
+                <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Close</Button>
+                <Button Color="ButtonColor.Primary">Save changes</Button>
+            </FooterTemplate>
+        </Modal>
+
+        <Button Color="ButtonColor.Primary" @onclick="OnShowModalClick">Show Modal</Button>
+    </div>
+
+
+}
+
+@code {
+    private List<Customer> customers = null;
+
+    public MetaData<Customer> MetaData { get; set; } = new MetaData<Customer>();
+    private RequestParameters _customerParameters = new RequestParameters();
+    [Parameter] public int Page { get; set; }
+    public int TotalItems { get; set; }
+    public int TotaPages { get; set; }
+
+    public int CurrentPageNumber { get; set; }
+
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     await LoadAsync();
+    // }
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        MetaData = await httpClient.GetJsonAsync<MetaData<Customer>>("api/Customer/getCustomers");
+        CurrentPageNumber = MetaData.CurrentPage;
+        TotalItems = MetaData.TotalCount;
+        customers = MetaData.Data;
+        TotaPages = MetaData.TotalPages;
+
+    }
+
+
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { CurrentPageNumber = newPageNumber; });
+
+        MetaData = await httpClient.GetJsonAsync<MetaData<Customer>>($"api/Customer/getCustomers?PageNumber={newPageNumber}&CurrentPageNumber={CurrentPageNumber}");
+        CurrentPageNumber = MetaData.CurrentPage;
+        TotalItems = MetaData.TotalCount;
+        customers = MetaData.Data;
+        TotaPages = MetaData.TotalPages;
+    }
+
+
+    protected void OnAddCustomer(EventArgs args)
+    {
+        Console.WriteLine("click event");
+    }
+
+    private Modal modal;
+
+    private async Task OnShowModalClick()
+    {
+        await modal?.ShowAsync();
+    }
+
+    private async Task OnHideModalClick()
+    {
+        await modal?.HideAsync();
+    }
+}

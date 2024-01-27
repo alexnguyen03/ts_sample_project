@@ -1,0 +1,116 @@
+﻿@page "/login"
+@using IdentityAuthentication.Model;
+
+@inject HttpClient httpClient ;
+<h3>Login</h3>
+
+
+<EditForm Model="@loginModel" OnSubmit="@Login" FormName="Login">
+
+    <div class="row gx-2">
+
+        <label>
+            Email :
+            <InputText class="form-control" @bind-Value="loginModel!.Email" />
+        </label>
+        <label>
+            Password:
+            <input type="password" class="form-control" @bind="loginModel!.Password" />
+        </label>
+
+    </div>
+
+    <div class="my-2">
+
+        <Button Color="ButtonColor.Primary" Type="ButtonType.Submit">Save changes</Button>
+
+        <Button Color="ButtonColor.Success" @onclick="RegisterOtherAccount">Register Account</Button>
+
+    </div>
+</EditForm>
+@code {
+    [SupplyParameterFromForm]
+    Login loginModel { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        loginModel ??= new();
+        // loginModel.Email = "admin@gmail.com";
+        // loginModel.Password = "String12@";
+
+    }
+
+
+    public async Task Login()
+    {
+
+        var response = await httpClient.PostAsJsonAsync("https://localhost:7063/api/Accounts/SignIn", loginModel);
+        if (!response.IsSuccessStatusCode)
+        {
+            // set error message for display, log to console and return
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        else
+        {
+            Console.WriteLine("Login success bae!!!");
+
+        }
+
+    }
+    private async Task RegisterAdminAccount()
+    {
+        SignUpModel signUpModel = new SignUpModel();
+        {
+            signUpModel.ConfirmPassword = "String12@";
+            signUpModel.Email = "admin@gmail.com";
+            signUpModel.FirstName = "<string>";
+            signUpModel.LastName = "<string>";
+            signUpModel.Password = "String12@";
+        }
+        var response = await httpClient.PostAsJsonAsync("https://localhost:7063/api/Accounts/SignUpForAdmin?role=admin", signUpModel);
+        if (!response.IsSuccessStatusCode)
+        {
+            // set error message for display, log to console and return
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        else
+        {
+            loginModel.Email = "admin@gmail.com";
+            loginModel.Password = "String12@";
+
+        }
+
+    }
+    private async Task RegisterOtherAccount()
+    {
+        SignUpModel signUpModel = new SignUpModel();
+        {
+            signUpModel.ConfirmPassword = "String12@";
+            signUpModel.Email = "hoainam@gmail.com";
+            signUpModel.FirstName = "<string>";
+            signUpModel.LastName = "<string>";
+            signUpModel.Password = "String12@";
+        }
+        var response = await httpClient.PostAsJsonAsync("https://localhost:7063/api/Accounts/SignUpForCustomer", signUpModel);
+        if (!response.IsSuccessStatusCode)
+        {
+            // set error message for display, log to console and return
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        else
+        {
+            loginModel.Email = "hoainam@gmail.com";
+            loginModel.Password = "String12@";
+
+        }
+
+    }
+}

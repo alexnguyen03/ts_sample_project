@@ -1,0 +1,105 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+
+
+@using ClientProject.Services;
+@using Microsoft.AspNetCore.Components;
+
+@using ServerProject.Models;
+@using ClientProject.Model;
+@using ClientProject.Components.Pages;
+
+
+ @inject HttpClient httpClient;
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+@if (customers == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+   <div>
+
+        <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in customers)
+            {
+                <tr>
+                    <td>@customer.CustomerId</td>
+                    <td>@customer.CompanyName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+       
+      <Pagination OnPageChanged="HandlePageChanged"  TotalItems=@TotalItems CurrentPageNumber=@CurrentPageNumber NavUrl="customers/Page/"/>
+
+
+   </div>
+
+    
+}
+@code {
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    private List<Customer> customers = null;
+
+    public MetaData<Customer> MetaData { get; set; } = new MetaData<Customer>();
+    private RequestParameters _customerParameters = new RequestParameters();
+    [Parameter] public int Page { get; set; }
+    public int TotalItems { get; set; }
+    public int CurrentPageNumber { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        MetaData = await httpClient.GetJsonAsync<MetaData<Customer>>("api/Customer/getCustomers");
+        CurrentPageNumber = MetaData.CurrentPage;
+        TotalItems = MetaData.TotalCount;
+        customers = MetaData.Data;
+    }
+
+    private async Task HandlePageChanged(int newPageNumber)
+    {
+        // Thực hiện đoạn mã trong ChildComponent
+
+        Console.WriteLine("===========HandlePageChanged===========", newPageNumber);
+
+        // MetaData = await httpClient.GetJsonAsync<MetaData<Customer>>("api/Customer/getCustomers?PageNumber=3&PageSize=4");
+        // CurrentPageNumber = MetaData.CurrentPage;
+        // TotalItems = MetaData.TotalCount;
+        // customers = MetaData.Data;
+
+        // Báo về component cha rằng đã xong và truyền dữ liệu về
+        StateHasChanged(); // Cập nhật trạng thái để render lại component
+    }
+}

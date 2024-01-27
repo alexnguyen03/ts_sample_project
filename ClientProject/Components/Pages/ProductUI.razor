@@ -1,0 +1,404 @@
+﻿@page "/"
+@using ClientProject.Services;
+@using Microsoft.AspNetCore.Components;
+@using ServerProject.Models;
+@using ClientProject.Model;
+@using ClientProject.Request;
+@using ClientProject.Components.Pages;
+@using BlazorBootstrap;
+@inject IJSRuntime JsRuntime
+@inject HttpClient httpClient;
+<h3>Product</h3>
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        <label>
+            Filter:
+            <input @bind="InputFilterValue" />
+        </label>
+        <Button Color="ButtonColor.Primary" Size="Size.Small" @onclick="OnFilter">Filter</Button>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ProductName</th>
+                    <th>UnitsInStock</th>
+                    <th>Category Name</th>
+                    <th>Supplier Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in products)
+                {
+                    <tr>
+                        <td>@product.ProductName</td>
+                        <td>@product.UnitsInStock</td>
+                        <td>@product.Category.CategoryName</td>
+                        <td>@product.Supplier.ContactName</td>
+                        <td>
+                            <Button Color="ButtonColor.Primary"
+                                    Size="Size.Small" @onclick="() =>OnEditForm(product.ProductId)">
+                                Edit
+                            </Button>
+                            <Button Color="ButtonColor.Danger" Size="Size.Small" @onclick="() => DeleteProduct(product.ProductId)">Delete</Button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <Pagination ActivePageNumber="@CurrentPageNumber" TotalPages="@TotaPages" PageChanged="OnPageChangedAsync" />
+        <Modal @ref="createModal" Title="Create Product">
+            <BodyTemplate>
+                <EditForm Model="@prodModel" OnSubmit="@SubmitCreateProduct" FormName="Product">
+                    <div class="container overflow-hidden">
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    ProductName:
+                                    <InputText class="form-control" @bind-Value="prodModel!.ProductName" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    QuantityPerUnit:
+                                    <InputText class="form-control" @bind-Value="prodModel!.QuantityPerUnit" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    UnitsInStock:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitsInStock" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    UnitsOnOrder:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitsOnOrder" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    ReorderLevel:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.ReorderLevel" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    UnitPrice:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitPrice" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    Category:
+                                </label>
+                                <select @bind="prodModel.CategoryId" class="form-select mt-3" aria-label="Default select example">
+                                    <option selected>Open this select menu</option>
+                                    @foreach (var category in Categories)
+                                    {
+                                        <option value="@category.CategoryId">@category.CategoryName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    Supplier:
+                                </label>
+                                <select @bind="prodModel.SupplierId" class="form-select mt-3" aria-label="Default select example">
+                                    <option selected>Open this select menu</option>
+                                    @foreach (var supplier in Suppliers)
+                                    {
+                                        <option value="@supplier.SupplierId">@supplier.CompanyName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="row gx-2 mt-2">
+                                <div class="col">
+                                    <div class="form-check form-switch">
+                                        <label class="form-check-label" for="flexSwitchCheckDefault">  Discontinued</label>
+                                        <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="my-2">
+                        <Button Color="ButtonColor.Secondary" @onclick="OnHideCreateModalClick">Close</Button>
+                        <Button Color="ButtonColor.Primary" Type="ButtonType.Submit">Save changes</Button>
+                    </div>
+                </EditForm>
+            </BodyTemplate>
+        </Modal>
+        <Modal @ref="updateModal" Title="Update Product">
+            <BodyTemplate>
+                <EditForm Model="@prodModel" OnSubmit="@SubmitUpdateProduct" FormName="Product">
+                    <div class="container overflow-hidden">
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    ProductName:
+                                    <InputText class="form-control" @bind-Value="prodModel!.ProductName" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    QuantityPerUnit:
+                                    <InputText class="form-control" @bind-Value="prodModel!.QuantityPerUnit" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    UnitsInStock:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitsInStock" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    UnitsOnOrder:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitsOnOrder" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    ReorderLevel:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.ReorderLevel" />
+                                </label>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    UnitPrice:
+                                    <InputNumber class="form-control" @bind-Value="prodModel!.UnitPrice" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col">
+                                <label>
+                                    Category:
+                                </label>
+                                <select @bind="prodModel.CategoryId" class="form-select mt-3" aria-label="Default select example">
+                                    <option selected>Open this select menu</option>
+                                    @foreach (var category in Categories)
+                                    {
+                                        <option value="@category.CategoryId">@category.CategoryName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label>
+                                    Supplier:
+                                </label>
+                                <select @bind="prodModel.SupplierId" class="form-select mt-3" aria-label="Default select example">
+                                    <option selected>Open this select menu</option>
+                                    @foreach (var supplier in Suppliers)
+                                    {
+                                        <option value="@supplier.SupplierId">@supplier.CompanyName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="row gx-2 mt-2">
+                                <div class="col">
+                                    <div class="form-check form-switch">
+                                        <label class="form-check-label" for="flexSwitchCheckDefault">  Discontinued</label>
+                                        <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="my-2">
+                        <Button Color="ButtonColor.Secondary" @onclick="OnHideEditModalClick">Close</Button>
+                        <Button Color="ButtonColor.Primary" Type="ButtonType.Submit">Update</Button>
+                    </div>
+                </EditForm>
+            </BodyTemplate>
+        </Modal>
+        <Button Color="ButtonColor.Success" @onclick="OnShowCreateModalClick">Add Product</Button>
+    </div>
+}
+@code {
+    private List<Product> products = null;
+    private bool isEdit { get; set; } = false;
+    public MetaData<Product> MetaData { get; set; } = new MetaData<Product>();
+    private RequestParameters _productParameters = new RequestParameters();
+    [Parameter] public int Page { get; set; }
+    public int TotalItems { get; set; }
+    public int TotaPages { get; set; }
+    public string ModalRef { get; set; } = "createModal";
+    private Modal createModal;
+    private Modal updateModal;
+    public int CurrentPageNumber { get; set; }
+    public List<Category> Categories = null;
+    public List<Supplier> Suppliers = null;
+    private string? InputFilterValue { get; set; }
+    // product properties
+    [SupplyParameterFromForm]
+    Product prodModel { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetDataFormApi(null, null);
+        prodModel ??= new();
+        prodModel.ProductName = "SumSung";
+        prodModel.SupplierId = 2;
+        prodModel.CategoryId = 3;
+        prodModel.QuantityPerUnit = "48 - 6 oz jars";
+        prodModel.UnitPrice = (decimal)30.0000;
+        prodModel.UnitsInStock = 39;
+        prodModel.UnitsOnOrder = 0;
+        prodModel.ReorderLevel = 10;
+        prodModel.Discontinued = false;
+        await GetAllCategories();
+        await GetAllSuppliers();
+    }
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { CurrentPageNumber = newPageNumber; });
+        await GetDataFormApi(newPageNumber, InputFilterValue);
+    }
+    public async Task GetDataFormApi(int? PageNumber, string filter)
+    {
+        string url = "";
+        if (!String.IsNullOrEmpty(filter) && PageNumber != null)
+        {
+            url += $"?PageNumber={PageNumber}&filter={filter}";
+        }
+        else if (PageNumber != null)
+        {
+            url += $"?PageNumber={PageNumber}";
+        }
+        else if (!String.IsNullOrEmpty(filter)) { url += $"?filter={filter}"; }
+        url = "api/Product/getProducts" + url;
+        Console.WriteLine(url);
+        MetaData = await httpClient.GetJsonAsync<MetaData<Product>>(url);
+        CurrentPageNumber = MetaData.CurrentPage;
+        TotalItems = MetaData.TotalCount;
+        products = MetaData.Data;
+        TotaPages = MetaData.TotalPages;
+    }
+    protected void OnEditForm(int productId)
+    {
+        isEdit = true;
+        Product foundProduct = products.FirstOrDefault(p => p.ProductId == productId);
+        prodModel = foundProduct;
+        OnShowEditModalClick();
+    }
+    protected void OnAddProduct(EventArgs args)
+    {
+        Console.WriteLine("click event");
+    }
+    private async Task OnShowCreateModalClick()
+    {
+        await createModal?.ShowAsync();
+    }
+    private async Task OnHideCreateModalClick()
+    {
+        await createModal?.HideAsync();
+    }
+    private async Task OnShowEditModalClick()
+    {
+        await updateModal?.ShowAsync();
+    }
+    private async Task OnHideEditModalClick()
+    {
+        await updateModal?.HideAsync();
+    }
+    public async Task OnFilter()
+    {
+        await GetDataFormApi(CurrentPageNumber, InputFilterValue);
+    }
+    private async void SubmitCreateProduct()
+    {
+        await CreateProduct();
+    }
+    private async void SubmitUpdateProduct()
+    {
+        await UpdateProduct(prodModel.ProductId);
+    }
+    public async Task GetAllCategories()
+    {
+        Categories = await httpClient.GetJsonAsync<List<Category>>("api/Category/getCategories");
+    }
+    public async Task GetAllSuppliers()
+    {
+        Suppliers = await httpClient.GetJsonAsync<List<Supplier>>("api/Supplier/getSuppliers");
+    }
+    public async Task CreateProduct()
+    {
+        ProductRequest productRequest = GetDataInForm();
+        var response = await httpClient.PostAsJsonAsync("api/Product/createProduct", productRequest);
+        if (!response.IsSuccessStatusCode)
+        {
+            // set error message for display, log to console and return
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        else
+        {
+            await GetDataFormApi(CurrentPageNumber, InputFilterValue);
+            OnHideCreateModalClick();
+        }
+        var dataResp = await response.Content.ReadFromJsonAsync<Product>();
+    }
+    public async Task UpdateProduct(int productId)
+    {
+        ProductRequest productRequest = GetDataInForm();
+        productRequest.ProductId = productId;
+        var response = await httpClient.PutAsJsonAsync("api/Product/udpateProduct", productRequest);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        var dataResp = await response.Content.ReadFromJsonAsync<Product>();
+        OnHideEditModalClick();
+    }
+    public async Task DeleteProduct(int productId)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure to delete this product?");
+        if (!confirmed) return;
+        var response = await httpClient.DeleteAsync($"api/Product/deleteProduct?productId={productId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = response.ReasonPhrase;
+            Console.WriteLine($"There was an error! {errorMessage}");
+            return;
+        }
+        else
+        {
+            var itemToRemove = products.SingleOrDefault(r => r.ProductId == productId);
+            if (itemToRemove != null)
+                products.Remove(itemToRemove);
+        }
+        var dataResp = await response.Content.ReadFromJsonAsync<Product>();
+    }
+    private ProductRequest GetDataInForm()
+    {
+        ProductRequest productRequest = new ProductRequest();
+        productRequest.ProductName = prodModel!.ProductName;
+        productRequest.SupplierId = prodModel!.SupplierId;
+        productRequest.CategoryId = prodModel!.CategoryId;
+        productRequest.QuantityPerUnit = prodModel!.QuantityPerUnit;
+        productRequest.UnitPrice = prodModel!.UnitPrice;
+        productRequest.UnitsInStock = prodModel!.UnitsInStock;
+        productRequest.UnitsOnOrder = prodModel!.UnitsOnOrder;
+        productRequest.ReorderLevel = prodModel!.ReorderLevel;
+        productRequest.Discontinued = prodModel!.Discontinued;
+        return productRequest;
+    }
+}
