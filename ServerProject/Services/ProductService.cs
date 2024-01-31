@@ -2,16 +2,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+using Nest;
 using ServerProject.Models;
 namespace ServerProject.Services
 {
     public class ProductService : IProductService
     {
         private readonly MsdemoContext dbContext = null;
-        public ProductService(MsdemoContext dbContext)
+        private readonly IMongoCollection<ProductElastic> _productsCollection;
+        public readonly IElasticClient _elasticClient;
+        public ProductService(
+            MsdemoContext dbContext,
+         IElasticClient elasticClient)
         {
             this.dbContext = dbContext;
+            _elasticClient = elasticClient;
         }
+        //public ProductService(MsdemoContext dbContext)
+        //{
+        //    this.dbContext = dbContext;
+        //}
         public Product Create(Product product)
         {
             try
@@ -87,14 +98,21 @@ namespace ServerProject.Services
                 var foundProductWithSupplier = dbContext.Products
                     .Include(od => od.Supplier)
                     .FirstOrDefault(od => od.ProductId == product.ProductId);
-                Supplier supplier = foundProductWithSupplier?.Supplier;
+                Supplier supplier = new Supplier();
+                if (foundProductWithSupplier != null)
+                {
+                    supplier = foundProductWithSupplier?.Supplier;
+                    foundProduct.SupplierId = product.SupplierId;
+                }
+                if (foundCategory != null)
+                {
+                    foundProduct.Category = foundCategory;
+                }
                 if (foundProduct == null)
                 {
                     throw new Exception("Product not found !!!");
                 }
                 foundProduct.ProductName = product.ProductName;
-                foundProduct.SupplierId = product.SupplierId;
-                foundProduct.Category = foundCategory;
                 foundProduct.Supplier = supplier;
                 foundProduct.QuantityPerUnit = product.QuantityPerUnit;
                 foundProduct.UnitPrice = product.UnitPrice;
@@ -110,6 +128,95 @@ namespace ServerProject.Services
             {
                 throw new Exception("Error occurred while deleting the customer.", ex);
             }
+        }
+        public Product AddProductToES(Product product)
+        {
+            var response = _elasticClient.IndexDocument(product);
+            if (response.IsValid)
+            {
+                return product;
+            }
+            else
+            {
+                return new Product();
+            }
+        }
+        public void DeleteProduct(int productId)
+        {
+            _elasticClient.DeleteByQuery<Product>(p => p.Query(q1 => q1
+                             .Match(m => m
+                                 .Field(f => f.ProductId)
+                                 .Query(productId.ToString()
+                                 )
+                         )));
+        }
+        public List<Product> GetAllProducts()
+        {
+            var esResponse = _elasticClient.Search<Product>().Documents;
+            return esResponse.ToList();
+        }
+        public Product GetProductById(int productId)
+        {
+            var esResponse = _elasticClient.Search<Product>(x => x.
+                             Query(q1 => q1.Bool(b => b.Must(m =>
+                             m.Terms(t => t.Field(f => f.ProductId)
+                             .Terms<int>(productId))))));
+            return esResponse.Documents.FirstOrDefault();
+        }
+        public List<ProductElastic> SearchProduct(string keyWord)
+        {
+            var searchResponse = _elasticClient.Search<ProductElastic>(s => s
+             .Query(q => q
+             //get matching 
+             .Match(m => m
+                 .Field(f => f.ProductName)
+                 .Query(keyWord)
+             )
+             // get just using a little character
+             //.Prefix(c => c
+             //   //.Boost(1.1)
+             //   .Field(p => p.ProductName)
+             //   .Value(keyWord)
+             //       )
+             )
+             .Size(10)
+         );
+            if (searchResponse.IsValid)
+            {
+                return searchResponse.Documents.ToList();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public async void GenerateDataIntoDB()
+        {
+            List<ProductElastic> productInESs = new List<ProductElastic>();
+            for (int i = 93; i <= 1014; i++)
+            {
+                Product pr = new Product();
+                pr.ProductId = i;
+                pr.ProductName = Faker.Name.FullName();
+                pr.SupplierId = 3;
+                pr.CategoryId = 3;
+                pr.QuantityPerUnit = "48 - 6 oz jars";
+                pr.UnitPrice = 30;
+                pr.UnitsInStock = 39;
+                pr.UnitsOnOrder = 0;
+                pr.ReorderLevel = 10;
+                pr.Discontinued = false;
+                Update(pr);
+                ProductElastic productElastic = new ProductElastic();
+                productElastic.ProductId = pr.ProductId;
+                productElastic.ProductName = pr.ProductName;
+                productInESs.Add(productElastic);
+                await Console.Out.WriteLineAsync("index " + i);
+            }
+            //var bulkResponse = _elasticClient.Bulk(b => b
+            //       .Index("products")
+            //       .CreateMany(productInESs)
+            //   );
         }
     }
 }
