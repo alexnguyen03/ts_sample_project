@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ServerProject.Models;
+﻿namespace ServerProject.Models;
 
 public partial class Order
 {
@@ -11,7 +8,7 @@ public partial class Order
 
     public int? EmployeeId { get; set; }
 
-    public DateTime? OrderDate { get; set; }
+    public DateTime? OrderDate { get; set; } = default(DateTime?);
 
     public DateTime? RequiredDate { get; set; }
 
@@ -40,4 +37,9 @@ public partial class Order
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual Shipper? ShipViaNavigation { get; set; }
+
+    public override string? ToString()
+    {
+        return "OrderId: " + OrderId;
+    }
 }

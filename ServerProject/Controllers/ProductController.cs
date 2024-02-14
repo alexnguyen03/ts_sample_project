@@ -1,7 +1,7 @@
 ﻿using ClientProject.Model;
-using IdentityAuthentication.Model;
-using Microsoft.AspNetCore.Authorization;
+
 using Microsoft.AspNetCore.Mvc;
+
 using ServerProject.Models;
 using ServerProject.Services;
 namespace ServerProject.Controllers
@@ -11,12 +11,13 @@ namespace ServerProject.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService = null;
-
         private readonly ILogger<ProductController> _logger;
-        public ProductController(ILogger<ProductController> logger, IProductService productService)
+        private readonly IMessageProducer _messagePublisher;
+        public ProductController(ILogger<ProductController> logger, IProductService productService, IMessageProducer messagePublisher)
         {
             _productService = productService;
             _logger = logger;
+            _messagePublisher = messagePublisher;
         }
         //[Authorize]
         [HttpGet]
@@ -27,7 +28,7 @@ namespace ServerProject.Controllers
             return data;
         }
         [HttpGet]
-        [Authorize(Roles = UserRoles.Admin)]
+        //[Authorize(Roles = UserRoles.Admin)]
         [Route("getProduct")]
         public IActionResult getProductById(int productId)
         {
@@ -55,38 +56,30 @@ namespace ServerProject.Controllers
             var data = _productService.Update(product);
             return Ok(data);
         }
-
-
-
         [HttpGet]
         [Route("/[controller]/[action]")]
         public IEnumerable<Product> GetProducts()
         {
             return _productService.GetAllProducts();
         }
-
         [HttpGet]
         [Route("/[controller]/[action]/{id}")]
         public Product GetProductById(int id)
         {
             return _productService.GetProductById(id);
         }
-
         [HttpPost]
-        [Route("api/AddProduct")]
-        public void AddProduct([FromBody] Product product)
+        [Route("api/AddProductIntoES")]
+        public void AddProduct([FromBody] ProductElastic productElastic)
         {
-            _productService.AddProductToES(product);
+            _productService.AddProductToES(productElastic);
         }
-
-
         [HttpGet]
         [Route("api/SearchProduct")]
         public List<ProductElastic> SearchProduct(string keyWord)
         {
             return _productService.SearchProduct(keyWord);
         }
-
         [HttpGet]
         [Route("api/GenerateDataIntoDB")]
         public IActionResult GenerateDataIntoDB()
@@ -94,65 +87,11 @@ namespace ServerProject.Controllers
             _productService.GenerateDataIntoDB();
             return Ok();
         }
-
-
-
-
-        //[HttpPost]
-        //[Route("api/UpdateProduct")]
-        //public void UpdateProduct([FromBody] Product product)
-        //{
-        //    _productService.UpdateProductToES(product);
-        //}
-
-        //[HttpDelete]
-        //[Route("api/DeleteByProductId/{id}")]
-        //public void Delete(int id)
-        //{
-        //    _productService.DeleteProductInES(id);
-        //}
-
-        //[HttpGet]
-        //public async Task<List<ProductElastic>> Get() =>
-        //await _productService.GetAsync();
-        //[HttpGet("{id:length(24)}")]
-        //public async Task<ActionResult<ProductElastic>> Get(int id)
-        //{
-        //    var product = await _productService.GetAsync(id);
-        //    if (product is null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return product;
-        //}
-        //[HttpPost("createProductInMDB")]
-        //public async Task<IActionResult> Post(ProductElastic newProduct)
-        //{
-        //    await _productService.CreateAsync(newProduct);
-        //    return CreatedAtAction(nameof(Get), new { id = newProduct.ProductId }, newProduct);
-        //}
-        //[HttpPut("{id:length(24)}")]
-        //public async Task<IActionResult> Update(int id, ProductElastic updatedProduct)
-        //{
-        //    var product = await _productService.GetAsync(id);
-        //    if (product is null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    updatedProduct.Id = product.Id;
-        //    await _productService.UpdateAsync(updatedProduct.Id.ToString(), updatedProduct);
-        //    return NoContent();
-        //}
-        //[HttpDelete("{id:length(24)}")]
-        //public async Task<IActionResult> DeleteInMongoDb(int id)
-        //{
-        //    var product = await _productService.GetAsync(id);
-        //    if (product is null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    await _productService.RemoveAsync(id);
-        //    return NoContent();
-        //}
+        [HttpPost]
+        [Route("api/UpdateProductInES")]
+        public ProductElastic UpdateProduct([FromBody] ProductElastic productElastic)
+        {
+            return _productService.UpdateInElastic(productElastic);
+        }
     }
 }

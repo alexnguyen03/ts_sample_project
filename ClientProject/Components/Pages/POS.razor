@@ -1,0 +1,104 @@
+﻿@page "/"
+@* @using BlazorBarcodeScanner.ZXing.JS *@
+@using ZXingBlazor.Components
+
+<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.TopRight" AutoHide="true" Delay="6000" />
+<h3>POS - Nhân viên: @employee.LastName</h3>
+<hr />
+@* https://github.com/densen2014/ZXingBlazor/blob/master/Demo.Server/Pages/Index.razor *@
+<div class="row">
+    <div class="col-3">
+
+        @if (ShowScanBarcode)
+        {
+            <BarcodeReader ScanResult="ScanResult"
+                           Close="(()=>ShowScanBarcode=!ShowScanBarcode)"
+                           OnError="OnError"
+                           Decodeonce="false"
+                           UseBuiltinDiv="false"
+                           @ref="barcodeReader" />
+            <div @ref="barcodeReader.Element">
+                <div style=" max-width: 100%">
+                    <button class="btn btn-outline-success p-2 m-1 w-25" data-action="startButton">Quét lại</button>
+                    <button class="btn btn-outline-success p-2 m-1 w-25" data-action="resetButton">Làm mới</button>
+                    <button type="button" class="btn btn-outline-success p-2 m-1 w-25" data-action="closeButton">Close</button>
+                    <div data-action="sourceSelectPanel" style="display:none">
+                        <select data-action="sourceSelect" style="max-width:100%" class="form-control">
+                        </select>
+                    </div>
+                    <div>
+                        <video id="video" playsinline autoplay style="height:240px ; width: 100%;border: 1px solid red"></video>
+                    </div>
+                </div>
+            </div>
+        }
+        <button @onclick="()=>{ShowScanBarcode = true;}">Quét</button>
+        <label>Mã code</label>
+        <input type="text" class="form-control"
+               @bind-value="BarCode" />
+    </div>
+    <div class="col-9">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Tên thuốc</th>
+                    <th scope="col">Đơn vị</th>
+                    <th scope="col">Giá/đơn vị</th>
+                    <th scope="col">Số lượng</th>
+                    <th scope="col">Thành tiền</th>
+                    <th scope="col">Xóa</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (prod, index) in listProductInOrder.Select((prod, i) => (prod, i)))
+                {
+                    <tr>
+                        <th scope="row">@(index + 1)</th>
+                        <td>@prod.ProductName</td>
+                        <td>
+                            <select value="@prod.Unit.UnitId" @onchange="(e) => {HandleUnitSelection(prod.ProductId,e.Value.ToString());}" class="form-select" aria-label="Default select example">
+                                <option>Chọn đơn vị</option>
+                                @foreach (var unit in prod.Units)
+                                {
+                                    <option value="@unit.UnitId">@unit.UnitName</option>
+                                }
+                            </select>
+                        </td>
+                        <td>@prod.Unit.UnitPrice</td>
+                        <td>
+                            <input type="number" min="1"
+                                   @bind="prod.Quantity"
+                                   @oninput="(e)=>{
+                                UpdateTotalPrice(e.Value.ToString(), prod.ProductId);
+                        }" />
+                        </td>
+                        <td>@(prod.Unit.UnitPrice * @prod.Quantity) </td>
+                        <td><Button Color="ButtonColor.Danger" @onclick="()=>{RemoveProduct(prod.ProductId);}"> X</Button></td>
+                    </tr>
+                }
+                @if (listProductInOrder.Count == 0)
+                {
+                    <tr><td colspan="7"><div class=" alert alert-warning text-center">Vui lòng quét mã code để thêm sản phẩm</div></td></tr>
+                }
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-6">
+                <label>Khách hàng</label>
+
+            </div>
+            <div class="col-6">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">Tổng tiền thanh toán: <br /> <div class="badge bg-info fs-4 ">@DisplayTotalPrice()</div></div>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-primary btn-lg w-100 my-1" @onclick="Payment">Thanh toán</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

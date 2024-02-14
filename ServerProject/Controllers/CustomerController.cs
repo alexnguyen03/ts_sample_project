@@ -1,5 +1,7 @@
 ﻿using ClientProject.Model;
+
 using Microsoft.AspNetCore.Mvc;
+
 using ServerProject.Models;
 using ServerProject.Services;
 namespace ServerProject.Controllers
@@ -19,6 +21,13 @@ namespace ServerProject.Controllers
         {
             MetaData<Customer> data = _customerService.GetAll(customerParameters, filter);
             //Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(data));
+            return data;
+        }
+        [HttpGet]
+        [Route("getCustomersWithoutPage")]
+        public List<Customer> GetCustomersWithoutPage()
+        {
+            List<Customer> data = _customerService.GetCustomersWithoutPage();
             return data;
         }
         [HttpPost]

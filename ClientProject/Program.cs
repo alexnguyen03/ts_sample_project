@@ -1,6 +1,7 @@
 using ClientProject.Components;
 using ClientProject.Services;
 
+using Syncfusion.Blazor;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -29,6 +30,9 @@ builder.Services.AddCors(policy =>
     .AllowAnyMethod()
     .WithExposedHeaders("X-Pagination"));
 });
+
+
+builder.Services.AddSyncfusionBlazor();
 builder.Services.AddBlazorBootstrap();
 var app = builder.Build();
 

@@ -1,0 +1,6 @@
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.csproj.AssemblyReference.cache
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.GeneratedMSBuildEditorConfig.editorconfig
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.AssemblyInfoInputs.cache
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.AssemblyInfo.cs
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.csproj.CoreCompileInputs.cache
+D:\coding\learning\ServerProject\WebhookServer\obj\Debug\net8.0\WebhookServer.sourcelink.json

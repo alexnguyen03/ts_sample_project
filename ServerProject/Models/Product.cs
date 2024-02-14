@@ -14,7 +14,7 @@ public partial class Product
     public int? CategoryId { get; set; }
 
     public string? QuantityPerUnit { get; set; }
-    
+
     public decimal? UnitPrice { get; set; }
 
     public short? UnitsInStock { get; set; }
@@ -29,5 +29,9 @@ public partial class Product
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
+    public virtual ICollection<PosDetail> PosDetails { get; set; } = new List<PosDetail>();
+
     public virtual Supplier? Supplier { get; set; }
+
+    public virtual ICollection<Unit> Units { get; set; } = new List<Unit>();
 }

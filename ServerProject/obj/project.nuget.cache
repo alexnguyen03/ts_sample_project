@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "4rHGfOeS8AUK9kDOBJiynJh0idJG4Y/LN6Y/QY8M5xGTrik5kfna04jzCqh2d1jZGOwJ3CZW0w6JGpPvOb5+Zg==",
+  "dgSpecHash": "QZR+D8utw3SeY+raA6vijJ0r3ul/GOj3DlGJvVJ2LV84Mkashb9VxcblIZwxtrDdVjGuvy5PV4mYddrnuJrGoQ==",
   "success": true,
   "projectFilePath": "D:\\coding\\learning\\ServerProject\\ServerProject\\ServerProject.csproj",
   "expectedPackageFiles": [
@@ -157,6 +157,7 @@
     "C:\\Users\\IT_NAM\\.nuget\\packages\\nuget.projectmodel\\6.3.1\\nuget.projectmodel.6.3.1.nupkg.sha512",
     "C:\\Users\\IT_NAM\\.nuget\\packages\\nuget.protocol\\6.3.1\\nuget.protocol.6.3.1.nupkg.sha512",
     "C:\\Users\\IT_NAM\\.nuget\\packages\\nuget.versioning\\6.3.1\\nuget.versioning.6.3.1.nupkg.sha512",
+    "C:\\Users\\IT_NAM\\.nuget\\packages\\rabbitmq.client\\6.8.1\\rabbitmq.client.6.8.1.nupkg.sha512",
     "C:\\Users\\IT_NAM\\.nuget\\packages\\sharpcompress\\0.30.1\\sharpcompress.0.30.1.nupkg.sha512",
     "C:\\Users\\IT_NAM\\.nuget\\packages\\snappier\\1.0.0\\snappier.1.0.0.nupkg.sha512",
     "C:\\Users\\IT_NAM\\.nuget\\packages\\swashbuckle.aspnetcore\\6.4.0\\swashbuckle.aspnetcore.6.4.0.nupkg.sha512",

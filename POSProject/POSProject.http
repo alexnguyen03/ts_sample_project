@@ -1,0 +1,6 @@
+@POSProject_HostAddress = http://localhost:5165
+
+GET {{POSProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

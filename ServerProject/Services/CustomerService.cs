@@ -1,6 +1,8 @@
 ﻿using ClientProject.Model;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using ServerProject.Models;
 
 namespace ServerProject.Services
@@ -88,6 +90,11 @@ namespace ServerProject.Services
             return dbContext.Customers.Find(customerId);
         }
 
+        public List<Customer> GetCustomersWithoutPage()
+        {
+            return dbContext.Customers.Include(c => c.Orders)
+                                      .ToList();
+        }
 
         public Customer Update(Customer customer)
         {
@@ -111,7 +118,7 @@ namespace ServerProject.Services
                         foundCustomer.Fax = customer.Fax;
                         foundCustomer.Address = customer.Address;
                         List<CustomerDemographic> customerTypes =
-                            foundCustomer.CustomerTypes;
+                            (List<CustomerDemographic>)foundCustomer.CustomerTypes;
                         if (customer.CustomerTypes.Count > 0)
                         {
                             customerTypes.AddRange(customer.CustomerTypes);

@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
 using Nest;
-using NuGet.Configuration;
+
 using ServerProject.Models;
 using ServerProject.Services;
+
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -17,6 +19,8 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IShipperService, ShipperService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IPosService, PosService>();
+builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
 // Add services to the container.
 builder.Services.AddDbContext<MsdemoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -24,8 +28,6 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
 });
-
-
 builder.Services.Configure<TrungSonPharmaDatabaseSettings>(
     builder.Configuration.GetSection("TestElasticSearch"));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -90,7 +92,6 @@ settings.DefaultIndex("products");
 var client = new ElasticClient(settings);
 builder.Services.AddSingleton<IElasticClient>(client);
 var app = builder.Build();
-
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
 try

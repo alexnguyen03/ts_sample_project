@@ -43,6 +43,10 @@ public partial class MsdemoContext : DbContext
 
     public virtual DbSet<OrdersQry> OrdersQries { get; set; }
 
+    public virtual DbSet<Pos> Pos { get; set; }
+
+    public virtual DbSet<PosDetail> PosDetails { get; set; }
+
     public virtual DbSet<Product> Products { get; set; }
 
     public virtual DbSet<ProductSalesFor1997> ProductSalesFor1997s { get; set; }
@@ -68,6 +72,8 @@ public partial class MsdemoContext : DbContext
     public virtual DbSet<Supplier> Suppliers { get; set; }
 
     public virtual DbSet<Territory> Territories { get; set; }
+
+    public virtual DbSet<Unit> Units { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -416,6 +422,48 @@ public partial class MsdemoContext : DbContext
             entity.Property(e => e.ShippedDate).HasColumnType("datetime");
         });
 
+        modelBuilder.Entity<Pos>(entity =>
+        {
+            entity.HasKey(e => e.PosId);
+
+            entity.Property(e => e.PosId).HasColumnName("PosID");
+            entity.Property(e => e.CreateAt).HasColumnType("datetime");
+            entity.Property(e => e.CustomerId)
+                .HasMaxLength(5)
+                .IsFixedLength()
+                .HasColumnName("CustomerID");
+            entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Pos)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("FK_Pos_Customers");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.Pos)
+                .HasForeignKey(d => d.EmployeeId)
+                .HasConstraintName("FK_Pos_Employees");
+        });
+
+        modelBuilder.Entity<PosDetail>(entity =>
+        {
+            entity.ToTable("PosDetail");
+
+            entity.Property(e => e.PosDetailId).HasColumnName("PosDetailID");
+            entity.Property(e => e.BatchNumber)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.PosId).HasColumnName("PosID");
+            entity.Property(e => e.ProductId).HasColumnName("ProductID");
+            entity.Property(e => e.UnitName).HasMaxLength(30);
+
+            entity.HasOne(d => d.Pos).WithMany(p => p.PosDetails)
+                .HasForeignKey(d => d.PosId)
+                .HasConstraintName("FK_PosDetail_Pos");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.PosDetails)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_PosDetail_Products");
+        });
+
         modelBuilder.Entity<Product>(entity =>
         {
             entity.HasIndex(e => e.CategoryId, "CategoriesProducts");
@@ -599,6 +647,18 @@ public partial class MsdemoContext : DbContext
                 .HasForeignKey(d => d.RegionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Territories_Region");
+        });
+
+        modelBuilder.Entity<Unit>(entity =>
+        {
+            entity.Property(e => e.UnitId).HasColumnName("UnitID");
+            entity.Property(e => e.ProductId).HasColumnName("ProductID");
+            entity.Property(e => e.UnitName).HasMaxLength(30);
+            entity.Property(e => e.UnitPrice).HasColumnType("money");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.Units)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_Units_Products");
         });
 
         OnModelCreatingPartial(modelBuilder);

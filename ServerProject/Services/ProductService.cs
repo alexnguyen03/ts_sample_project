@@ -1,24 +1,41 @@
 ﻿using ClientProject.Model;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
+
 using MongoDB.Driver;
+
 using Nest;
+
 using ServerProject.Models;
+
 namespace ServerProject.Services
 {
     public class ProductService : IProductService
     {
         private readonly MsdemoContext dbContext = null;
-        private readonly IMongoCollection<ProductElastic> _productsCollection;
+        private readonly IMongoCollection<ProductElastic>? _productsCollection;
         public readonly IElasticClient _elasticClient;
+        private readonly IMessageProducer _messagePublisher;
         public ProductService(
+            IMessageProducer messagePublisher,
             MsdemoContext dbContext,
          IElasticClient elasticClient)
         {
             this.dbContext = dbContext;
             _elasticClient = elasticClient;
+            _messagePublisher = messagePublisher;
         }
+
+
+        public ProductService(
+         IElasticClient elasticClient)
+        {
+            _elasticClient = elasticClient;
+        }
+
+
         //public ProductService(MsdemoContext dbContext)
         //{
         //    this.dbContext = dbContext;
@@ -27,30 +44,31 @@ namespace ServerProject.Services
         {
             try
             {
-                Category foundCategory = dbContext.Categories.Find(product.CategoryId);
+                Category foundCategory = dbContext.Categories.Find(product.CategoryId)!;
                 var foundProductWithSupplier = dbContext.Products
                     .Include(od => od.Supplier)
                     .FirstOrDefault(od => od.ProductId == product.ProductId);
-                Supplier supplier = foundProductWithSupplier?.Supplier;
+                Supplier supplier = foundProductWithSupplier?.Supplier!;
                 product.Category = foundCategory;
                 product.Supplier = supplier;
                 dbContext.Products.Update(product);
                 dbContext.SaveChanges();
+                _messagePublisher.SendMessage(product, Channel.PRODUCT.ToString());
                 return product;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while deleting the customer.", ex);
+                throw new Exception("Error occurred while creating the product.", ex)!;
             }
         }
         public Product Delete(int productId)
         {
             try
             {
-                Product foundProduct = dbContext.Products.Find(productId);
+                Product foundProduct = dbContext.Products.Find(productId)!;
                 if (foundProduct == null)
                 {
-                    throw new Exception("Product not found !!!");
+                    throw new Exception("Product not found !!!")!;
                 }
                 dbContext.Products.Remove(foundProduct);
                 dbContext.SaveChanges();
@@ -58,7 +76,7 @@ namespace ServerProject.Services
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while deleting the product.", ex);
+                throw new Exception("Error occurred while deleting the product.", ex)!;
             }
         }
         public MetaData<Product> GetAll(RequestParameters productParameters, [FromQuery] string filter = "")
@@ -87,21 +105,22 @@ namespace ServerProject.Services
         {
             return dbContext.Products
                 .Include(o => o.Category)
+                .Include(o => o.Units)
                 .FirstOrDefault(o => o.ProductId == ProductId);
         }
         public Product Update(Product product)
         {
             try
             {
-                Product foundProduct = dbContext.Products.Find(product.ProductId);
-                Category foundCategory = dbContext.Categories.Find(product.CategoryId);
+                Product foundProduct = dbContext.Products.Find(product.ProductId)!;
+                Category foundCategory = dbContext.Categories.Find(product.CategoryId)!;
                 var foundProductWithSupplier = dbContext.Products
                     .Include(od => od.Supplier)
                     .FirstOrDefault(od => od.ProductId == product.ProductId);
                 Supplier supplier = new Supplier();
                 if (foundProductWithSupplier != null)
                 {
-                    supplier = foundProductWithSupplier?.Supplier;
+                    supplier = foundProductWithSupplier!.Supplier!;
                     foundProduct.SupplierId = product.SupplierId;
                 }
                 if (foundCategory != null)
@@ -110,7 +129,7 @@ namespace ServerProject.Services
                 }
                 if (foundProduct == null)
                 {
-                    throw new Exception("Product not found !!!");
+                    throw new Exception("Product not found !!!")!;
                 }
                 foundProduct.ProductName = product.ProductName;
                 foundProduct.Supplier = supplier;
@@ -122,24 +141,27 @@ namespace ServerProject.Services
                 foundProduct.Discontinued = product.Discontinued;
                 dbContext.Products.Update(foundProduct);
                 dbContext.SaveChanges();
+                _messagePublisher.SendMessage(product, Channel.PRODUCT.ToString());
                 return foundProduct;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while deleting the customer.", ex);
+                throw new Exception("Error occurred while update the product.", ex)!;
             }
         }
-        public Product AddProductToES(Product product)
+        public ProductElastic AddProductToES(ProductElastic productElastic)
         {
-            var response = _elasticClient.IndexDocument(product);
+            var response = _elasticClient.IndexDocument<ProductElastic
+>(productElastic);
             if (response.IsValid)
             {
-                return product;
+                return productElastic;
             }
             else
             {
-                return new Product();
+                return new ProductElastic();
             }
+
         }
         public void DeleteProduct(int productId)
         {
@@ -206,7 +228,7 @@ namespace ServerProject.Services
                 pr.UnitsOnOrder = 0;
                 pr.ReorderLevel = 10;
                 pr.Discontinued = false;
-                Update(pr);
+                //Update(pr);
                 ProductElastic productElastic = new ProductElastic();
                 productElastic.ProductId = pr.ProductId;
                 productElastic.ProductName = pr.ProductName;
@@ -215,8 +237,28 @@ namespace ServerProject.Services
             }
             //var bulkResponse = _elasticClient.Bulk(b => b
             //       .Index("products")
+
             //       .CreateMany(productInESs)
             //   );
+        }
+
+        public ProductElastic UpdateInElastic(ProductElastic productElastic)
+        {
+            var response = _elasticClient.Update<ProductElastic, object>(productElastic.ProductId, u => u
+          .Index("products") // replace with your actual index name
+          .Doc(productElastic)
+      //.RetryOnConflict(3) // optional: specify the number of retries on version conflicts
+      );
+
+            if (response.IsValid)
+            {
+                return productElastic;
+            }
+            else
+            {
+                // Handle the case where the update was not successful
+                return new ProductElastic();
+            }
         }
     }
 }

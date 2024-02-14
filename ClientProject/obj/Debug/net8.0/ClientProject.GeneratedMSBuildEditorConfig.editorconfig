@@ -54,6 +54,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQYWdpbmF0aW9uZnNsZGZrLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/coding/learning/ServerProject/ClientProject/Components/Pages/POS.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQT1MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/coding/learning/ServerProject/ClientProject/Components/Pages/ProductUI.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWN0VUkucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 

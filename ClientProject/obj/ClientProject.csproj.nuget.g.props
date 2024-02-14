@@ -13,9 +13,14 @@
     <SourceRoot Include="C:\Users\IT_NAM\.nuget\packages\" />
   </ItemGroup>
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)zxingblazor\1.1.4\buildTransitive\ZXingBlazor.props" Condition="Exists('$(NuGetPackageRoot)zxingblazor\1.1.4\buildTransitive\ZXingBlazor.props')" />
+    <Import Project="$(NuGetPackageRoot)syncfusion.blazor.themes\24.2.3\buildTransitive\Syncfusion.Blazor.Themes.props" Condition="Exists('$(NuGetPackageRoot)syncfusion.blazor.themes\24.2.3\buildTransitive\Syncfusion.Blazor.Themes.props')" />
+    <Import Project="$(NuGetPackageRoot)syncfusion.blazor.core\24.2.3\buildTransitive\Syncfusion.Blazor.Core.props" Condition="Exists('$(NuGetPackageRoot)syncfusion.blazor.core\24.2.3\buildTransitive\Syncfusion.Blazor.Core.props')" />
+    <Import Project="$(NuGetPackageRoot)syncfusion.blazor.barcodegenerator\24.2.3\buildTransitive\Syncfusion.Blazor.BarcodeGenerator.props" Condition="Exists('$(NuGetPackageRoot)syncfusion.blazor.barcodegenerator\24.2.3\buildTransitive\Syncfusion.Blazor.BarcodeGenerator.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.analyzers\3.3.4\buildTransitive\Microsoft.CodeAnalysis.Analyzers.props" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.analyzers\3.3.4\buildTransitive\Microsoft.CodeAnalysis.Analyzers.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.entityframeworkcore\8.0.1\buildTransitive\net8.0\Microsoft.EntityFrameworkCore.props" Condition="Exists('$(NuGetPackageRoot)microsoft.entityframeworkcore\8.0.1\buildTransitive\net8.0\Microsoft.EntityFrameworkCore.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.components.quickgrid\8.0.1\buildTransitive\Microsoft.AspNetCore.Components.QuickGrid.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.components.quickgrid\8.0.1\buildTransitive\Microsoft.AspNetCore.Components.QuickGrid.props')" />
+    <Import Project="$(NuGetPackageRoot)blazorbarcodescanner.zxing.js\1.0.4\buildTransitive\BlazorBarcodeScanner.ZXing.JS.props" Condition="Exists('$(NuGetPackageRoot)blazorbarcodescanner.zxing.js\1.0.4\buildTransitive\BlazorBarcodeScanner.ZXing.JS.props')" />
     <Import Project="$(NuGetPackageRoot)blazor.bootstrap\1.10.5\buildTransitive\Blazor.Bootstrap.props" Condition="Exists('$(NuGetPackageRoot)blazor.bootstrap\1.10.5\buildTransitive\Blazor.Bootstrap.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">

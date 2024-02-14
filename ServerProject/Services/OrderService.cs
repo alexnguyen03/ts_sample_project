@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+
 using ServerProject.Models;
 namespace ServerProject.Services
 {
@@ -30,26 +31,28 @@ namespace ServerProject.Services
             Order newOrder = new Order();
             try
             {
-                Customer foundCustomer = dbContext.Customers.Find(order.CustomerId);
-                Employee foundEmployee = dbContext.Employees.Find(order.EmployeeId);
+                Customer foundCustomer = dbContext.Customers.Find(order.CustomerId)!;
+                Employee foundEmployee = dbContext.Employees.Find(order.EmployeeId)!;
                 if (foundEmployee == null)
                 {
-                    throw new Exception("Employee not found");
+                    throw new Exception("Employee not found")!;
                 }
                 if (foundCustomer == null)
                 {
-                    throw new Exception("Customer not found");
+                    throw new Exception("Customer not found")!;
                 }
                 order.Customer = foundCustomer;
                 order.Employee = foundEmployee;
+                order.OrderDate = DateTime.Now;
                 foundCustomer.Orders.Add(order);
                 dbContext.Orders.Add(order);
                 dbContext.SaveChangesAsync();
+                Console.WriteLine("order created: " + order);
                 return order;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while adding the order.", ex);
+                throw new Exception("Error occurred while adding the order.", ex)!;
             }
         }
         public Order Update(Order order)
@@ -74,11 +77,11 @@ namespace ServerProject.Services
                     dbContext.SaveChanges();
                     return foundOrder;
                 }
-                throw new Exception("Order not found !!!");
+                throw new Exception("Order not found !!!")!;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while updating the order.", ex);
+                throw new Exception("Error occurred while updating the order.", ex)!;
             }
         }
         public Order Delete(int orderId)
@@ -92,11 +95,11 @@ namespace ServerProject.Services
                     dbContext.SaveChanges();
                     return foundOrder;
                 }
-                throw new Exception("Customer not found !!!");
+                throw new Exception("Order not found !!!")!;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while deleting the customer.", ex);
+                throw new Exception("Error occurred while deleting the order.", ex)!;
             }
         }
         public List<Order> GetAllOrdersByCustomerId(string CustomerId)
