@@ -1,31 +1,39 @@
-﻿using Nest;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
+
 using ServerProject.Models;
 using ServerProject.Services;
+
 using System.Text;
+
 using WHProject.Service;
 namespace WHProject
 {
     class Program
     {
-        public readonly IElasticClient _elasticClient;
-        public readonly IOrderService orderService;
+        //public readonly IElasticClient _elasticClient;
+        //private readonly IOrderService orderService;
         private readonly MsdemoContext dbContext = null;
-        public Program(IElasticClient elasticClient, MsdemoContext dbContext, IOrderService orderService)
+        public Program(
+            //IElasticClient elasticClient,
+            //MsdemoContext dbContext,
+            //IOrderService orderService
+            //RabbitMQManager rabbitMQManager
+            )
         {
-            _elasticClient = elasticClient;
-            this.dbContext = dbContext;
-            this.orderService = orderService;
+            //_elasticClient = _elasticClient;
+            //this.dbContext = dbContext;
+            //this.orderService = orderService;
         }
-        public Program()
-        {
-        } 
         public void AddProductToES(IConnection connection, ElasticsearchManager elasticsearchManager)
         {
             using var modelConnection = connection.CreateModel();
-            modelConnection.QueueDeclare(Channel.PRODUCT.ToString(), durable: false, exclusive: false, autoDelete: false, arguments: null);
+            modelConnection.QueueDeclare(Channels.PRODUCT.ToString(), durable: false, exclusive: false, autoDelete: false, arguments: null);
+            modelConnection.ExchangeDeclare("messages", ExchangeType.Fanout);
+            //modelConnection.QueueBind(Channel.PRODUCT.ToString(), "messages", "");
             var consumer = new EventingBasicConsumer(modelConnection);
             consumer.Received += (modelConnection, eventArgs) =>
             {
@@ -39,58 +47,58 @@ namespace WHProject
                 elasticsearchManager.AddDocument("products", productElastic);
                 Console.WriteLine(product);
             };
-            modelConnection.BasicConsume(queue: Channel.PRODUCT.ToString(), autoAck: true, consumer: consumer);
-            Console.ReadKey();
+            modelConnection.BasicConsume(queue: Channels.PRODUCT.ToString(), autoAck: true, consumer: consumer);
         }
-        public void AddOrder(IConnection connection)
+        public static void Consumer()
         {
-            using var modelConnection = connection.CreateModel();
-            modelConnection.QueueDeclare(Channel.ORDER.ToString(), durable: false, exclusive: false, autoDelete: false, arguments: null);
-            var consumer = new EventingBasicConsumer(modelConnection);
-            consumer.Received += (model, eventArgs) =>
+            var factory = new ConnectionFactory
             {
-                var body = eventArgs.Body.ToArray();
-                var message = Encoding
-                .UTF8.GetString(body);
-                Order order = JsonConvert.DeserializeObject<Order>(message)!;
-                //try
-                //{
-                //    Customer foundCustomer = dbContext.Customers.Find(order.CustomerId)!;
-                //    Employee foundEmployee = dbContext.Employees.Find(order.EmployeeId)!;
-                //    if (foundEmployee == null)
-                //    {
-                //        throw new Exception("Employee not found")!;
-                //    }
-                //    if (foundCustomer == null)
-                //    {
-                //        throw new Exception("Customer not found")!;
-                //    }
-                //    order.Customer = foundCustomer;
-                //    order.Employee = foundEmployee;
-                //    foundCustomer.Orders.Add(order);
-                //    dbContext.Orders.Add(order);
-                //    dbContext.SaveChanges();
-                //}
-                //catch (Exception ex)
-                //{
-                //    throw new Exception("Error occurred while adding the order.", ex)!;
-                //}
-                orderService.Create(order);
-                Console.WriteLine(order);
+                HostName = "localhost"
             };
-            modelConnection.BasicConsume(queue: Channel.ORDER.ToString(), autoAck: true, consumer: consumer);
-            Console.ReadKey();
+            //Create the RabbitMQ connection using connection factory details as i mentioned above
+            var connection = factory.CreateConnection();
+            //Here we create channel with session and model
+            using
+            var channel = connection.CreateModel();
+            bool isQueueExists = false;
+            try
+            {
+                channel.QueueDeclarePassive(Channels.ORDER.ToString()); // Tên hàng đợi cần kiểm tra
+                isQueueExists = true;
+            }
+            catch (OperationInterruptedException ex)
+            {
+                // Xử lý ngoại lệ khi hàng đợi không tồn tại
+                Console.WriteLine("Hàng đợi không tồn tại: " + ex.Message);
+            }
+            //declare the queue after mentioning name and a few property related to that
+            //channel.QueueDeclare("ORDER", exclusive: false);
+            //Set Event object which listen message from chanel which is sent by producer
+            if (isQueueExists)
+            {
+                var consumer = new EventingBasicConsumer(channel);
+                consumer.Received += (model, eventArgs) =>
+                {
+                    var body = eventArgs.Body.ToArray();
+                    var message = Encoding.UTF8.GetString(body);
+                    Console.WriteLine($"Product message received: {message}");
+                };
+                //read the message
+                channel.BasicConsume(queue: Channels.ORDER.ToString(), autoAck: true, consumer: consumer);
+                Console.ReadKey();
+            }
+            else
+            {
+                Console.WriteLine("Queue was not declared!!!");
+            }
         }
         static void Main(string[] args)
         {
-            Program program = new Program();
-            var elasticsearchManager = new ElasticsearchManager("http://localhost:9200");
-            Console.WriteLine("Project is running.....");
-            var factory = new ConnectionFactory { HostName = "localhost" };
-            var connection = factory.CreateConnection();
-            program.AddProductToES(connection, elasticsearchManager);
-            program.AddOrder(connection);
-            Console.WriteLine("Project is end.....");
+            var rabbitMQManager = new RabbitMQManager();
+            rabbitMQManager.ConsumeOrderQueue();
+            rabbitMQManager.ConsumeProductQueue();
+            //rabbitMQManager.ConsumeQueue("ORDER");
+            Console.ReadKey();
         }
     }
 }

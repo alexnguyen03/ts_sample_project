@@ -12,12 +12,10 @@ namespace ServerProject.Controllers
     {
         private readonly IProductService _productService = null;
         private readonly ILogger<ProductController> _logger;
-        private readonly IMessageProducer _messagePublisher;
         public ProductController(ILogger<ProductController> logger, IProductService productService, IMessageProducer messagePublisher)
         {
             _productService = productService;
             _logger = logger;
-            _messagePublisher = messagePublisher;
         }
         //[Authorize]
         [HttpGet]
@@ -72,7 +70,7 @@ namespace ServerProject.Controllers
         [Route("api/AddProductIntoES")]
         public void AddProduct([FromBody] ProductElastic productElastic)
         {
-            _productService.AddProductToES(productElastic);
+            _productService.AddProductToES("products", productElastic);
         }
         [HttpGet]
         [Route("api/SearchProduct")]
@@ -87,11 +85,11 @@ namespace ServerProject.Controllers
             _productService.GenerateDataIntoDB();
             return Ok();
         }
-        [HttpPost]
+        [HttpPut]
         [Route("api/UpdateProductInES")]
         public ProductElastic UpdateProduct([FromBody] ProductElastic productElastic)
         {
-            return _productService.UpdateInElastic(productElastic);
+            return _productService.UpdateDocumentInES("products", productElastic);
         }
     }
 }

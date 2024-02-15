@@ -86,7 +86,13 @@
         <div class="row">
             <div class="col-6">
                 <label>Khách hàng</label>
-
+                <select @bind="@CustomerId" class="form-select" aria-label="Default select example">
+                    <option>Chọn Khách hàng</option>
+                    @foreach (var customer in listCustomers)
+                    {
+                        <option value="@customer.CustomerId">@customer.CompanyName</option>
+                    }
+                </select>
             </div>
             <div class="col-6">
                 <div class="row">

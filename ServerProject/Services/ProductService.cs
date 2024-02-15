@@ -17,15 +17,12 @@ namespace ServerProject.Services
         private readonly MsdemoContext dbContext = null;
         private readonly IMongoCollection<ProductElastic>? _productsCollection;
         public readonly IElasticClient _elasticClient;
-        private readonly IMessageProducer _messagePublisher;
         public ProductService(
-            IMessageProducer messagePublisher,
             MsdemoContext dbContext,
          IElasticClient elasticClient)
         {
             this.dbContext = dbContext;
             _elasticClient = elasticClient;
-            _messagePublisher = messagePublisher;
         }
 
 
@@ -53,7 +50,6 @@ namespace ServerProject.Services
                 product.Supplier = supplier;
                 dbContext.Products.Update(product);
                 dbContext.SaveChanges();
-                _messagePublisher.SendMessage(product, Channel.PRODUCT.ToString());
                 return product;
             }
             catch (Exception ex)
@@ -141,7 +137,6 @@ namespace ServerProject.Services
                 foundProduct.Discontinued = product.Discontinued;
                 dbContext.Products.Update(foundProduct);
                 dbContext.SaveChanges();
-                _messagePublisher.SendMessage(product, Channel.PRODUCT.ToString());
                 return foundProduct;
             }
             catch (Exception ex)
@@ -149,19 +144,26 @@ namespace ServerProject.Services
                 throw new Exception("Error occurred while update the product.", ex)!;
             }
         }
-        public ProductElastic AddProductToES(ProductElastic productElastic)
+        public ProductElastic AddProductToES(string indexName, ProductElastic document)
         {
-            var response = _elasticClient.IndexDocument<ProductElastic
->(productElastic);
-            if (response.IsValid)
+            // Kiểm tra xem index có tồn tại hay không, nếu không thì tạo mới
+            CreateIndexIfNotExists<ProductElastic>(indexName);
+
+            // Index document
+            var indexResponse = _elasticClient.Index(document, i => i
+                .Index(indexName)
+            );
+
+            if (indexResponse.IsValid)
             {
-                return productElastic;
+                Console.WriteLine($"Document added successfully. ID: {indexResponse.Id}");
+                return document;
             }
             else
             {
-                return new ProductElastic();
+                Console.WriteLine($"Error adding document: {indexResponse.OriginalException.Message}");
+                return null;
             }
-
         }
         public void DeleteProduct(int productId)
         {
@@ -242,22 +244,59 @@ namespace ServerProject.Services
             //   );
         }
 
-        public ProductElastic UpdateInElastic(ProductElastic productElastic)
-        {
-            var response = _elasticClient.Update<ProductElastic, object>(productElastic.ProductId, u => u
-          .Index("products") // replace with your actual index name
-          .Doc(productElastic)
-      //.RetryOnConflict(3) // optional: specify the number of retries on version conflicts
-      );
 
-            if (response.IsValid)
+
+        private void CreateIndexIfNotExists<T>(string indexName) where T : class
+        {
+            if (!_elasticClient.Indices.Exists(indexName).Exists)
             {
-                return productElastic;
+                _elasticClient.Indices.Create(indexName, c => c
+                    .Map<T>(m => m.AutoMap())
+                );
+                Console.WriteLine($"Index '{indexName}' created successfully.");
+            }
+        }
+
+        public ProductElastic UpdateDocumentInES(string indexName, ProductElastic updatedDocument)
+        {
+            var searchResponse = _elasticClient.Search<ProductElastic>(s => s
+                    .Index(indexName)
+                    .Query(q => q
+                        .Term(t => t
+                            .Field(f => f.ProductId) // Thay thế ProductId bằng tên trường chứa productId
+                            .Value(updatedDocument.ProductId)
+                        )
+                    )
+                );
+
+            // Kiểm tra xem có document nào được tìm thấy không
+            if (searchResponse.IsValid && searchResponse.Hits.Count > 0)
+            {
+                // Lấy document đầu tiên tìm thấy
+                var documentId = searchResponse.Hits.First().Id;
+
+                // Cập nhật document
+                var updateResponse = _elasticClient.Update<ProductElastic>(documentId, u => u
+                    .Index(indexName)
+                    .Doc(updatedDocument)
+                );
+
+                if (updateResponse.IsValid)
+                {
+                    Console.WriteLine($"Document updated successfully. ID: {updateResponse.Id}");
+                    return updatedDocument;
+                }
+                else
+                {
+                    Console.WriteLine($"Error updating document: {updateResponse.OriginalException.Message}");
+                    return new ProductElastic();
+                }
             }
             else
             {
-                // Handle the case where the update was not successful
+                Console.WriteLine($"No document found with productId: {updatedDocument}");
                 return new ProductElastic();
+
             }
         }
     }

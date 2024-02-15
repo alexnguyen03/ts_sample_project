@@ -23,8 +23,7 @@ namespace ServerProject.Controllers
             //Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(data));
             return data;
         }
-        [HttpGet]
-        [Route("getCustomersWithoutPage")]
+        [HttpGet("getCustomersWithoutPage")]
         public List<Customer> GetCustomersWithoutPage()
         {
             List<Customer> data = _customerService.GetCustomersWithoutPage();

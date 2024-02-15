@@ -7,28 +7,40 @@ namespace ServerProject.Services
     public class PosService : IPosService
     {
 
-        private readonly MsdemoContext dbContext = null;
-        private readonly IMessageProducer _messagePublisher;
+        private readonly MsdemoContext dbContext;
+        private readonly RabbitMQManager rabbitMQManager;
+
         public PosService(
-            IMessageProducer messagePublisher,
+            RabbitMQManager rabbitMQManager,
             MsdemoContext dbContext)
         {
             this.dbContext = dbContext;
-            _messagePublisher = messagePublisher;
+            this.rabbitMQManager = rabbitMQManager;
         }
 
         public Pos Create(Pos pos)
         {
             pos.CreateAt = DateTime.Now;
-
-
             dbContext.Pos.Add(pos);
             dbContext.SaveChanges();
             Order newOrder = new Order();
             newOrder.CustomerId = pos.CustomerId;
             newOrder.OrderDate = pos.CreateAt;
             newOrder.EmployeeId = pos.EmployeeId;
-            _messagePublisher.SendMessage(newOrder, Channel.ORDER.ToString());
+            List<OrderDetail> listOrderDetail = new List<OrderDetail>();
+            foreach (var item in pos.PosDetails!)
+            {
+
+                var orderDetail = new OrderDetail();
+                orderDetail.ProductId = (int)item.ProductId!;
+                orderDetail.UnitPrice = (decimal)item.PricePerUnit!;
+                orderDetail.Quantity = (short)item.Quantity!;
+
+                listOrderDetail.Add(orderDetail);
+            }
+            newOrder.OrderDetails = listOrderDetail;
+
+            rabbitMQManager.SendMessage(newOrder, Channels.ORDER.ToString(), "ORDER_ROUTING");
             return pos;
 
         }

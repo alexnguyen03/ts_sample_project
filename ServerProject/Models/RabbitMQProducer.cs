@@ -16,7 +16,7 @@ namespace ServerProject.Models
             channel.QueueDeclare(queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
             var json = JsonConvert.SerializeObject(message);
             var body = Encoding.UTF8.GetBytes(json);
-            channel.BasicPublish(exchange: "", routingKey: queueName, body: body);
+            channel.BasicPublish(exchange: "", routingKey: "", body: body);
         }
     }
 }

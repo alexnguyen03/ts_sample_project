@@ -12,13 +12,13 @@ namespace ServerProject.Services
         public Product Create(Product product);
         public Product Update(Product product);
         public Product Delete(int productId);
-        public ProductElastic AddProductToES(ProductElastic productElastic);
+        public ProductElastic AddProductToES(string indexName, ProductElastic document);
         public void DeleteProduct(int productId);
         public List<Product> GetAllProducts();
         public Product GetProductById(int productId);
         public List<ProductElastic> SearchProduct(string keyWord);
         public void GenerateDataIntoDB();
-        public ProductElastic UpdateInElastic(ProductElastic productElastic);
+        public ProductElastic UpdateDocumentInES(string indexName, ProductElastic updatedDocument);
         //public Task<ProductElastic> CreateInElastic(ProductElastic productElastic);
         //public Task<List<ProductElastic>> GetAsync();
         //public Task<ProductElastic?> GetAsync(int id);

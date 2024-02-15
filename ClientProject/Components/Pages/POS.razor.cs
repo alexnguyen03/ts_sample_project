@@ -132,7 +132,7 @@ namespace ClientProject.Components.Pages
   };
         private void UpdateTotalPrice(string value, int prdId)
         {
-            ProductInOrder item = listProductInOrder.Find(prd => prd.ProductId == prdId)!;
+            ProductInOrder item = listProductInOrder!.Find(prd => prd.ProductId == prdId)!;
             if (item != null)
             {
                 item.Quantity = int.Parse(value);
@@ -141,22 +141,22 @@ namespace ClientProject.Components.Pages
         }
         private Double DisplayTotalPrice()
         {
-            return listProductInOrder.Sum(prd =>
+            return listProductInOrder!.Sum(prd =>
             {
                 return Convert.ToDouble(prd.Quantity) * Convert.ToDouble(prd.Unit.UnitPrice);
             });
         }
         private void RemoveProduct(int productId)
         {
-            var prodToRemove = listProductInOrder.Single(r => r.ProductId == productId);
-            listProductInOrder.Remove(prodToRemove);
+            var prodToRemove = listProductInOrder!.Single(r => r.ProductId == productId);
+            listProductInOrder!.Remove(prodToRemove);
         }
         private async Task GetAllCustomer()
         {
 
             try
             {
-                var response = await httpClient.GetAsync("/api/Customer/getCustomersWithoutPage");
+                var response = await httpClient.GetAsync("api/Customer/getCustomersWithoutPage");
                 if (!response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NoContent)
                 {
                     var errorMessage = response.ReasonPhrase;
@@ -167,7 +167,10 @@ namespace ClientProject.Components.Pages
                 listCustomers = JsonConvert.DeserializeObject<List<Customer>>(responseData)!;
                 StateHasChanged();
             }
-            catch (Exception ex) { await Console.Out.WriteLineAsync("Error: " + ex); }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi chuyển tiếp: {ex.Message}");
+            }
 
 
         }
@@ -177,7 +180,7 @@ namespace ClientProject.Components.Pages
             Pos newPos = new Pos();
             newPos.CustomerId = CustomerId;
             newPos.TotalPrice = DisplayTotalPrice();
-            newPos.EmployeeId = employee.EmployeeId;
+            newPos.EmployeeId = employee!.EmployeeId;
             List<PosDetail> listPosDetail = new List<PosDetail>();
             foreach (var item in listProductInOrder!)
             {

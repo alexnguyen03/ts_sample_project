@@ -92,8 +92,7 @@ namespace ServerProject.Services
 
         public List<Customer> GetCustomersWithoutPage()
         {
-            return dbContext.Customers.Include(c => c.Orders)
-                                      .ToList();
+            return dbContext.Customers.ToList();
         }
 
         public Customer Update(Customer customer)

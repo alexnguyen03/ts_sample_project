@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -21,6 +21,8 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IPosService, PosService>();
 builder.Services.AddScoped<IMessageProducer, RabbitMQProducer>();
+builder.Services.AddScoped<RabbitMQManager>();
+
 // Add services to the container.
 builder.Services.AddDbContext<MsdemoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -86,6 +88,15 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
     };
 });
+
+
+
+var rabbitMQManager = new RabbitMQManager();
+
+// Tạo kênh
+rabbitMQManager.CreateChannel(Channels.ORDER.ToString(), "direct", Channels.ORDER.ToString(), "ORDER_ROUTING");
+rabbitMQManager.CreateChannel(Channels.PRODUCT.ToString(), "direct", Channels.PRODUCT.ToString(), "PRODUCT_ROUTING");
+
 var node = new Uri("http://localhost:9200");
 var settings = new ConnectionSettings(node);
 settings.DefaultIndex("products");

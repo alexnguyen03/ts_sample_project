@@ -5,11 +5,16 @@ namespace ServerProject.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly MsdemoContext dbContext = null;
+        private readonly MsdemoContext dbContext;
         public OrderService(MsdemoContext dbContext)
         {
             this.dbContext = dbContext;
         }
+
+        public OrderService()
+        {
+        }
+
         public List<Order> GetOrders()
         {
             return dbContext.Orders
@@ -28,7 +33,6 @@ namespace ServerProject.Services
         }
         public Order Create(Order order)
         {
-            Order newOrder = new Order();
             try
             {
                 Customer foundCustomer = dbContext.Customers.Find(order.CustomerId)!;
