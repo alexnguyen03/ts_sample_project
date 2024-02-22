@@ -9,43 +9,70 @@ using RabbitMQ.Client.Exceptions;
 using ServerProject.Models;
 
 using System.Text;
+
 namespace ServerProject.Services
 {
     public class RabbitMQManager
     {
-        private readonly ConnectionFactory _connectionFactory = new ConnectionFactory() { HostName = "localhost" };
-        private readonly MsdemoContext dbContext = new MsdemoContext();
+        private readonly ConnectionFactory _connectionFactory = new()
+        {
+            HostName = "localhost"
+        };
+        private readonly MsdemoContext dbContext;
         private readonly IConnection? _connection;
         private readonly IModel _channel;
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
+        private readonly ILogger<RabbitMQManager> _logger;
+
+
         public RabbitMQManager()
         {
-            _connectionFactory = new ConnectionFactory() { HostName = "localhost" }; // Thay đổi thành thông tin kết nối RabbitMQ của bạn
+            _connectionFactory = new ConnectionFactory() { HostName = "localhost" };
             _connection = _connectionFactory.CreateConnection();
             _channel = _connection.CreateModel();
             _orderService = new OrderService(new MsdemoContext());
             this.dbContext = new MsdemoContext();
             _productService = new ProductService(new MsdemoContext(), new ElasticClient());
         }
-        public void CreateChannel(string exchangeName, string exchangeType, string queueName, string routingKey)
+
+        public void CreateChannel(
+            string exchangeName,
+            string exchangeType,
+            string queueName,
+            string routingKey
+        )
         {
             _channel.ExchangeDeclare(exchange: exchangeName, type: exchangeType);
-            _channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueDeclare(
+                queue: queueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
             _channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
         }
+
         public void SendMessage<T>(T message, string exchangeName, string routingKey)
         {
             var json = JsonConvert.SerializeObject(message);
             var body = Encoding.UTF8.GetBytes(json);
-            _channel.BasicPublish(exchange: exchangeName, routingKey: routingKey, basicProperties: null, body: body);
+            _channel.BasicPublish(
+                exchange: exchangeName,
+                routingKey: routingKey,
+                basicProperties: null,
+                body: body
+            );
         }
+
         public void ConsumeQueue(string queueName)
         {
             bool isQueueExists = false;
             try
             {
                 _channel.QueueDeclarePassive(queueName);
+
                 isQueueExists = true;
             }
             catch (OperationInterruptedException ex)
@@ -68,6 +95,7 @@ namespace ServerProject.Services
                 Console.WriteLine("Hàng đợi không tồn tại: ");
             }
         }
+
         public void ConsumeOrderQueue()
         {
             bool isQueueExists = false;
@@ -93,13 +121,18 @@ namespace ServerProject.Services
                     Order order = JsonConvert.DeserializeObject<Order>(message)!;
                     _orderService.Create(order);
                 };
-                _channel.BasicConsume(queue: Channels.ORDER.ToString(), autoAck: true, consumer: consumer);
+                _channel.BasicConsume(
+                    queue: Channels.ORDER.ToString(),
+                    autoAck: true,
+                    consumer: consumer
+                );
             }
             else
             {
                 Console.WriteLine("Hàng đợi không tồn tại: ");
             }
         }
+
         public void ConsumeProductQueue()
         {
             bool isQueueExists = false;
@@ -128,7 +161,11 @@ namespace ServerProject.Services
                     _productService.UpdateDocumentInES("products", productElastic);
                     Console.WriteLine(product);
                 };
-                _channel.BasicConsume(queue: Channels.PRODUCT.ToString(), autoAck: true, consumer: consumer);
+                _channel.BasicConsume(
+                    queue: Channels.PRODUCT.ToString(),
+                    autoAck: true,
+                    consumer: consumer
+                );
             }
             else
             {

@@ -1,5 +1,6 @@
 ﻿using IdentityAuthentication.Model;
 using IdentityAuthentication.Service;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace IdentityAuthentication.Controllers
@@ -49,13 +50,13 @@ namespace IdentityAuthentication.Controllers
         }
         [HttpGet("admin")]
         [Authorize(Roles = UserRoles.Admin)]
-        public async Task<IActionResult> TestForAdmin()
+        public IActionResult TestForAdmin()
         {
             return Ok("This is content for Admin has authorized!!");
         }
         [HttpGet("all")]
         [Authorize]
-        public async Task<IActionResult> TestForAll()
+        public IActionResult TestForAll()
         {
             return Ok("This is content for everyone has authorized!!");
         }

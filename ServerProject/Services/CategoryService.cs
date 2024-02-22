@@ -1,11 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ServerProject.Models;
+﻿using ServerProject.Models;
 
 namespace ServerProject.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly MsdemoContext dbContext = null;
+        private readonly MsdemoContext dbContext;
         public CategoryService(MsdemoContext dbContext)
         {
             this.dbContext = dbContext;
@@ -31,32 +30,32 @@ namespace ServerProject.Services
             try
             {
 
-                Category category = dbContext.Categories.Find(categoryId);
+                Category? category = dbContext.Categories.Find(categoryId);
 
-                dbContext.Categories.Remove(category);
+                dbContext.Categories.Remove(category!);
                 dbContext.SaveChanges();
 
                 return category;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while", ex);
+                throw new Exception("Error occurred while", ex)!;
             }
 
         }
 
         public List<Category> GetAll()
         {
-            return dbContext.Categories.Include(c => c.Products).ToList();
+            return dbContext.Categories.ToList();
         }
         public Category Update(Category category)
         {
             try
             {
-                Category foundCategory = dbContext.Categories.Find(category.CategoryId);
+                Category foundCategory = dbContext.Categories.Find(category.CategoryId)!;
                 if (foundCategory == null)
                 {
-                    throw new Exception("Category not found");
+                    throw new Exception("Category not found")!;
                 }
                 foundCategory.CategoryName = category.CategoryName;
                 foundCategory.Description = category.Description;
@@ -68,7 +67,7 @@ namespace ServerProject.Services
             }
             catch (Exception ex)
             {
-                throw new Exception("Error occurred while", ex);
+                throw new Exception("Error occurred while", ex)!;
             }
         }
     }

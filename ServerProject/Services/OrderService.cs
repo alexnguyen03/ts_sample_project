@@ -1,36 +1,39 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using ServerProject.Models;
+
 namespace ServerProject.Services
 {
     public class OrderService : IOrderService
     {
         private readonly MsdemoContext dbContext;
+
         public OrderService(MsdemoContext dbContext)
         {
             this.dbContext = dbContext;
         }
 
-        public OrderService()
-        {
-        }
+        public OrderService() { }
 
         public List<Order> GetOrders()
         {
-            return dbContext.Orders
-                .Include(o => o.OrderDetails)
+            return dbContext
+                .Orders.Include(o => o.OrderDetails)
                 //.ThenInclude(it => it.Product)
                 .Include(o => o.Customer)
                 .Include(o => o.Employee)
                 .ToList();
         }
+
         public Order GetAllOrdersByOrderId(int orderId)
         {
-            return dbContext.Orders
-                    .Include(o => o.Customer)
-                    .Include(o => o.Employee)
-                    .FirstOrDefault(o => o.OrderId == orderId);
+            return dbContext
+                .Orders.Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .FirstOrDefault(o => o.OrderId == orderId);
         }
+
         public Order Create(Order order)
         {
             try
@@ -59,11 +62,12 @@ namespace ServerProject.Services
                 throw new Exception("Error occurred while adding the order.", ex)!;
             }
         }
+
         public Order Update(Order order)
         {
             try
             {
-                Order foundOrder = dbContext.Orders.Find(order.OrderId);
+                Order foundOrder = dbContext.Orders.Find(order.OrderId)!;
                 if (foundOrder != null)
                 {
                     foundOrder.OrderDate = order.OrderDate;
@@ -88,11 +92,12 @@ namespace ServerProject.Services
                 throw new Exception("Error occurred while updating the order.", ex)!;
             }
         }
+
         public Order Delete(int orderId)
         {
             try
             {
-                Order foundOrder = dbContext.Orders.Find(orderId);
+                Order foundOrder = dbContext.Orders.Find(orderId)!;
                 if (foundOrder != null)
                 {
                     dbContext.Orders.Remove(foundOrder);
@@ -106,6 +111,7 @@ namespace ServerProject.Services
                 throw new Exception("Error occurred while deleting the order.", ex)!;
             }
         }
+
         public List<Order> GetAllOrdersByCustomerId(string CustomerId)
         {
             throw new NotImplementedException();

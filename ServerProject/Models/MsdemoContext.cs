@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ServerProject.Models;
 
@@ -488,9 +486,9 @@ public partial class MsdemoContext : DbContext
             entity.Property(e => e.UnitsInStock).HasDefaultValue((short)0);
             entity.Property(e => e.UnitsOnOrder).HasDefaultValue((short)0);
 
-            entity.HasOne(d => d.Category).WithMany(p => p.Products)
-                .HasForeignKey(d => d.CategoryId)
-                .HasConstraintName("FK_Products_Categories");
+            //entity.HasOne(d => d.Category).WithMany(p => p.Products)
+            //    .HasForeignKey(d => d.CategoryId)
+            //    .HasConstraintName("FK_Products_Categories");
 
             entity.HasOne(d => d.Supplier).WithMany(p => p.Products)
                 .HasForeignKey(d => d.SupplierId)
@@ -656,9 +654,9 @@ public partial class MsdemoContext : DbContext
             entity.Property(e => e.UnitName).HasMaxLength(30);
             entity.Property(e => e.UnitPrice).HasColumnType("money");
 
-            entity.HasOne(d => d.Product).WithMany(p => p.Units)
-                .HasForeignKey(d => d.ProductId)
-                .HasConstraintName("FK_Units_Products");
+            //entity.HasOne(d => d.Product).WithMany(p => p.Units)
+            //    .HasForeignKey(d => d.ProductId)
+            //    .HasConstraintName("FK_Units_Products");
         });
 
         OnModelCreatingPartial(modelBuilder);

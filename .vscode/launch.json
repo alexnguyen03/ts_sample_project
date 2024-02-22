@@ -1,0 +1,35 @@
+{
+	"configurations": [
+		{
+			"name": "WHProject",
+			"type": "coreclr",
+			"request": "launch",
+			"preLaunchTask": "build",
+			"program": "${workspaceFolder}\\WHProject\\WHProject.csproj",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"stopAtEntry": false,
+			"console": "internalConsole"
+		},
+		{
+			"name": "ClientProject",
+			"type": "dotnet",
+			"request": "launch",
+			"projectPath": "${workspaceFolder}\\ClientProject\\ClientProject.csproj"
+		},
+
+		{
+			"name": "ServerProject",
+			"type": "dotnet",
+			"request": "launch",
+			"projectPath": "${workspaceFolder}\\ServerProject\\ServerProject.csproj",
+			"launchConfigurationId": "TargetFramework=;http"
+		}
+	],
+	"compounds": [
+		{
+			"name": "ServerProject/ClientProject/WHProject",
+			"configurations": ["ServerProject", "ClientProject", "WHProject"]
+		}
+	]
+}

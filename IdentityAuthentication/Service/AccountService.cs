@@ -57,7 +57,7 @@ namespace IdentityAuthentication.Service
         }
         public async Task<object> Register(SignUpModel model, string role)
         {
-            var userExists = await userManager.FindByEmailAsync(model.Email);
+                var userExists = await userManager.FindByEmailAsync(model.Email);
             if (userExists != null)
                 return 404;
             var user = new IdentityUser

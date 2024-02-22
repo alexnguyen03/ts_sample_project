@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+
 using ServerProject.Models;
 using ServerProject.Services;
 namespace ServerProject.Controllers
@@ -7,7 +8,7 @@ namespace ServerProject.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly ICategoryService _categoryService = null;
+        private readonly ICategoryService _categoryService;
         public CategoryController(ICategoryService categoryService)
         {
             this._categoryService = categoryService;

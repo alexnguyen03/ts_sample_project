@@ -10,7 +10,7 @@ namespace ServerProject.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly IProductService _productService = null;
+        private readonly IProductService _productService;
         private readonly ILogger<ProductController> _logger;
         public ProductController(ILogger<ProductController> logger, IProductService productService, IMessageProducer messagePublisher)
         {
@@ -22,8 +22,7 @@ namespace ServerProject.Controllers
         [Route("getProducts")]
         public MetaData<Product> getProducts([FromQuery] RequestParameters productParameters, [FromQuery] string filter = "")
         {
-            MetaData<Product> data = _productService.GetAll(productParameters, filter);
-            return data;
+            return _productService.GetAll(productParameters, filter);
         }
         [HttpGet]
         //[Authorize(Roles = UserRoles.Admin)]
@@ -35,21 +34,21 @@ namespace ServerProject.Controllers
         }
         [HttpPost]
         [Route("createProduct")]
-        public IActionResult createProduct(Product product)
+        public IActionResult CreateProduct(Product product)
         {
             var data = _productService.Create(product);
             return Ok(data);
         }
         [HttpDelete]
         [Route("deleteProduct")]
-        public IActionResult deleteProduct(int productId)
+        public IActionResult DeleteProduct(int productId)
         {
             var data = _productService.Delete(productId);
             return Ok(data);
         }
         [HttpPut]
         [Route("updateProduct")]
-        public IActionResult updateProduct(Product product)
+        public IActionResult UpdateProduct(Product product)
         {
             var data = _productService.Update(product);
             return Ok(data);

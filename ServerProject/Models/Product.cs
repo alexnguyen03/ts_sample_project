@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 
 namespace ServerProject.Models;
 
@@ -25,13 +24,14 @@ public partial class Product
 
     public bool Discontinued { get; set; }
 
-    public virtual Category? Category { get; set; }
-
+    public Category? Category { get; set; }
+    [JsonIgnore]
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
-
+    [JsonIgnore]
     public virtual ICollection<PosDetail> PosDetails { get; set; } = new List<PosDetail>();
-
+    [JsonIgnore]
     public virtual Supplier? Supplier { get; set; }
+    //[JsonIgnore]
+    public ICollection<Unit> Units { get; set; } = new List<Unit>();
 
-    public virtual ICollection<Unit> Units { get; set; } = new List<Unit>();
 }

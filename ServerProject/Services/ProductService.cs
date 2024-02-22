@@ -1,4 +1,6 @@
-﻿using ClientProject.Model;
+﻿using AutoMapper;
+
+using ClientProject.Model;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
@@ -9,29 +11,45 @@ using MongoDB.Driver;
 using Nest;
 
 using ServerProject.Models;
-
 namespace ServerProject.Services
 {
     public class ProductService : IProductService
     {
-        private readonly MsdemoContext dbContext = null;
-        private readonly IMongoCollection<ProductElastic>? _productsCollection;
+        private readonly MsdemoContext dbContext;
         public readonly IElasticClient _elasticClient;
+        private readonly ICacheService _cacheService;
+        private readonly IMapper _mapper;
+        private readonly ILogger<ProductService> _logger;
+        private DateTimeOffset EXPIRATION_TIME = DateTimeOffset.Now.AddMinutes(5.0);
+
+
+        public MsdemoContext MsdemoContext { get; }
+        public ElasticClient ElasticClient { get; }
+
         public ProductService(
+        ILogger<ProductService> logger,
             MsdemoContext dbContext,
-         IElasticClient elasticClient)
+         IElasticClient elasticClient,
+          ICacheService cacheService,
+          IMapper mapper)
         {
+            _mapper = mapper;
+            _logger = logger;
             this.dbContext = dbContext;
             _elasticClient = elasticClient;
+            _cacheService = cacheService;
         }
-
-
         public ProductService(
          IElasticClient elasticClient)
         {
             _elasticClient = elasticClient;
         }
 
+        public ProductService(MsdemoContext msdemoContext, ElasticClient elasticClient)
+        {
+            MsdemoContext = msdemoContext;
+            ElasticClient = elasticClient;
+        }
 
         //public ProductService(MsdemoContext dbContext)
         //{
@@ -50,6 +68,7 @@ namespace ServerProject.Services
                 product.Supplier = supplier;
                 dbContext.Products.Update(product);
                 dbContext.SaveChanges();
+                _cacheService.RemoveDataWithPrefix("product?page");
                 return product;
             }
             catch (Exception ex)
@@ -61,6 +80,7 @@ namespace ServerProject.Services
         {
             try
             {
+                _cacheService.RemoveDataWithPrefix("product");
                 Product foundProduct = dbContext.Products.Find(productId)!;
                 if (foundProduct == null)
                 {
@@ -68,6 +88,7 @@ namespace ServerProject.Services
                 }
                 dbContext.Products.Remove(foundProduct);
                 dbContext.SaveChanges();
+                _cacheService.RemoveDataWithPrefix("product?page");
                 return foundProduct;
             }
             catch (Exception ex)
@@ -77,6 +98,14 @@ namespace ServerProject.Services
         }
         public MetaData<Product> GetAll(RequestParameters productParameters, [FromQuery] string filter = "")
         {
+            var cacheData = _cacheService.GetData<MetaData<Product>>($"product?page={productParameters.PageNumber}");
+            if (cacheData != null)
+            {
+                _logger.LogInformation(message: $"data return in cache is: {cacheData}");
+                return cacheData;
+            }
+            var EXPIRATION_TIME = DateTimeOffset.Now.AddMinutes(5.0);
+            _logger.LogInformation(message: $"data return not in cache is: {cacheData}");
             var query = dbContext.Products
                                  .Include(p => p.Category)
                                  .Include(p => p.Supplier)
@@ -95,19 +124,37 @@ namespace ServerProject.Services
             response.PageSize = productParameters.PageSize;
             List<Product> products = query.ToList();
             response.Data = products;
+            _cacheService.SetData<MetaData<Product>>($"product?page={productParameters.PageNumber}", response, EXPIRATION_TIME);
+            _logger.LogInformation(message: $"data return NOT in cache is: {response}");
+
             return response;
         }
         public Product GetById(int ProductId)
         {
-            return dbContext.Products
+            var cacheData = _cacheService.GetData<Product>($"product?id={ProductId}");
+            if (cacheData != null)
+            {
+                _logger.LogInformation(message: $"Product return in cache is: {cacheData}");
+                return cacheData;
+            }
+            _logger.LogInformation(message: $"Product return not in cache is: {cacheData}");
+
+
+
+
+            var data = dbContext.Products
                 .Include(o => o.Category)
                 .Include(o => o.Units)
                 .FirstOrDefault(o => o.ProductId == ProductId);
+            _cacheService.SetData<Product>($"product?id={ProductId}", data, EXPIRATION_TIME);
+
+            return data;
         }
         public Product Update(Product product)
         {
             try
             {
+
                 Product foundProduct = dbContext.Products.Find(product.ProductId)!;
                 Category foundCategory = dbContext.Categories.Find(product.CategoryId)!;
                 var foundProductWithSupplier = dbContext.Products
@@ -137,6 +184,8 @@ namespace ServerProject.Services
                 foundProduct.Discontinued = product.Discontinued;
                 dbContext.Products.Update(foundProduct);
                 dbContext.SaveChanges();
+                _cacheService.RemoveDataWithPrefix("product");
+
                 return foundProduct;
             }
             catch (Exception ex)
@@ -148,12 +197,10 @@ namespace ServerProject.Services
         {
             // Kiểm tra xem index có tồn tại hay không, nếu không thì tạo mới
             CreateIndexIfNotExists<ProductElastic>(indexName);
-
             // Index document
             var indexResponse = _elasticClient.Index(document, i => i
                 .Index(indexName)
             );
-
             if (indexResponse.IsValid)
             {
                 Console.WriteLine($"Document added successfully. ID: {indexResponse.Id}");
@@ -211,7 +258,7 @@ namespace ServerProject.Services
             }
             else
             {
-                return null;
+                return [];
             }
         }
         public async void GenerateDataIntoDB()
@@ -239,13 +286,9 @@ namespace ServerProject.Services
             }
             //var bulkResponse = _elasticClient.Bulk(b => b
             //       .Index("products")
-
             //       .CreateMany(productInESs)
             //   );
         }
-
-
-
         private void CreateIndexIfNotExists<T>(string indexName) where T : class
         {
             if (!_elasticClient.Indices.Exists(indexName).Exists)
@@ -256,7 +299,6 @@ namespace ServerProject.Services
                 Console.WriteLine($"Index '{indexName}' created successfully.");
             }
         }
-
         public ProductElastic UpdateDocumentInES(string indexName, ProductElastic updatedDocument)
         {
             var searchResponse = _elasticClient.Search<ProductElastic>(s => s
@@ -268,19 +310,16 @@ namespace ServerProject.Services
                         )
                     )
                 );
-
             // Kiểm tra xem có document nào được tìm thấy không
             if (searchResponse.IsValid && searchResponse.Hits.Count > 0)
             {
                 // Lấy document đầu tiên tìm thấy
                 var documentId = searchResponse.Hits.First().Id;
-
                 // Cập nhật document
                 var updateResponse = _elasticClient.Update<ProductElastic>(documentId, u => u
                     .Index(indexName)
                     .Doc(updatedDocument)
                 );
-
                 if (updateResponse.IsValid)
                 {
                     Console.WriteLine($"Document updated successfully. ID: {updateResponse.Id}");
@@ -296,7 +335,6 @@ namespace ServerProject.Services
             {
                 Console.WriteLine($"No document found with productId: {updatedDocument}");
                 return new ProductElastic();
-
             }
         }
     }

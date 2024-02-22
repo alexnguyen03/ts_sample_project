@@ -16,7 +16,7 @@ namespace WHProject
     {
         //public readonly IElasticClient _elasticClient;
         //private readonly IOrderService orderService;
-        private readonly MsdemoContext dbContext = null;
+        private readonly MsdemoContext dbContext;
         public Program(
             //IElasticClient elasticClient,
             //MsdemoContext dbContext,
